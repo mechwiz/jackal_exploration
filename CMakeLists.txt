@@ -24,7 +24,6 @@ find_package(catkin REQUIRED COMPONENTS
   rosconsole
   roslib
   sensor_msgs
-  std_msgs
   tf
   tf2_eigen
   message_filters
