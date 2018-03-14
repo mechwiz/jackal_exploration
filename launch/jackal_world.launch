@@ -25,11 +25,11 @@
   </include>
 
   <!-- Load Jackal's description, controllers, and teleop nodes. -->
-  <include file="$(find jackal_description)/launch/description.launch">
+  <include file="$(find jackal_exploration)/launch/description.launch">
     <arg name="config" value="$(arg config)" />
   </include>
-  <include file="$(find jackal_control)/launch/control.launch" />
-  <include file="$(find jackal_control)/launch/teleop.launch">
+  <include file="$(find jackal_exploration)/launch/control.launch" />
+  <include file="$(find jackal_exploration)/launch/teleop.launch">
     <arg name="joystick" value="false"/>
   </include>
 
