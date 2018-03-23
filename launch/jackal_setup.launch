@@ -1,0 +1,17 @@
+<launch>
+
+  <!--- Run gmapping -->
+  <include file="$(find jackal_exploration)/launch/gmapping_demo.launch" />
+
+  <!--- Run Pointcloud Filter -->
+  <include file="$(find jackal_exploration)/launch/pointcloud_filter.launch" />
+
+  <!--- Run Pointcloud to Laserscan -->
+  <include file="$(find jackal_exploration)/launch/point2laser.launch" />
+
+  <!--- Run Twist Mux -->
+  <include file="$(find jackal_exploration)/launch/twist_mux.launch" />
+
+  <node pkg="jackal_exploration" type="z_correction.py" name="z_correction" output="screen" />
+
+</launch>

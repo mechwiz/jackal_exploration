@@ -21,6 +21,8 @@ global prevpnt
 global sample
 global stuckpnt
 global offsetcnt
+global firstgoal
+global checkpnt
 
 sample = []
 newcost = []
@@ -30,6 +32,8 @@ init = 0
 prevpnt = 0
 offsetcnt = 0
 stuckpnt = []
+firstgoal=0
+checkpnt = 0
 
 cost_update = OccupancyGridUpdate()
 costmap = OccupancyGrid()
@@ -132,6 +136,8 @@ def feedbackCb(data):
     global stuckpnt
     global offsetcnt
     global prevpnt
+    global firstgoal
+    global checkpnt
 
     offsetx = [1,-1,1,-1]
     offsety = [1,-1,-1,1]
@@ -141,12 +147,17 @@ def feedbackCb(data):
     y = feedback.feedback.base_position.pose.position.y
     sample.append([x,y])
 
+    if firstgoal == 0:
+        sendGoal([x+0.5,y+0.5])
+        firstgoal = 1
+
     if len(sample) > 15:
         sa = np.array(sample)
         mx = np.average(sa[:,0]) - x
         my = np.average(sa[:,1]) - y
         if abs(mx)<0.001 and abs(my)<0.001:
-            prevpnt = 0
+            if checkpnt < 3:
+                prevpnt = 0
             rospy.loginfo('Stuck. Resetting Goal...')
             if len(stuckpnt) > 0:
                 sx = stuckpnt[0]
@@ -170,6 +181,7 @@ def sendNavCb(data):
     global feedback
     global prevpnt
     global sample
+    global checkpnt
 
     sample = []
     send = True
@@ -228,7 +240,14 @@ def sendNavCb(data):
                 idx = find_closest([int(c),int(r)],frontier_pnts)
                 nextpnt = frontier_pnts[idx]
                 rospy.loginfo([nextpnt,prevpnt])
-                if nextpnt == prevpnt:
+                if prevpnt == 0:
+                    checkpnt+=1
+                    rospy.loginfo('checkpoint increased')
+                    rospy.loginfo(checkpnt)
+                else:
+                    checkpnt = 0
+
+                if np.sum((np.asarray(nextpnt) - np.asarray(prevpnt))**2) < 200:
                     frontier_pnts.remove(nextpnt)
                     if len(frontier_pnts) > 0:
                         idx = find_closest([int(c),int(r)],frontier_pnts)

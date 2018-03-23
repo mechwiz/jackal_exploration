@@ -1,0 +1,5 @@
+<launch>
+
+    <node pkg="jackal_exploration" type="gridcalc.py" name="gridcalc" output="screen" />
+
+</launch>

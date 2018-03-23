@@ -30,4 +30,7 @@
       leaf_size: 0.025
     </rosparam>
   </node>
+
+  <!-- custom node to filter out groundplane -->
+  <!-- <node pkg="jackal_exploration" type="conical_filter" name="conical_filter" output="screen" /> -->
 </launch>
