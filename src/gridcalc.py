@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped, Quaternion
 from nav_msgs.msg import OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
 from move_base_msgs.msg import MoveBaseActionResult, MoveBaseActionFeedback
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from tf.transformations import quaternion_from_euler
 
