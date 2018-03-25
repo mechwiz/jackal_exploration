@@ -38,12 +38,16 @@ Note, wait until each of the following launch files have finished starting befor
 #### Simulation
 - Launch the Gazebo world: `roslaunch jackal_exploration jackal_world.launch`
 - Launch the Jackal Setup configs: `roslaunch jackal_exploration jackal_setup.launch`. These include running:
-    - gmapping
-    - pointcloud filtering
+    - gmapping to start SLAM
+    - pointcloud filtering (cropbox and voxel-grid downsampling)
     - pointcloud to laserscan conversion to make gmapping happy
-    - z-correction
+    - z-correction to correct for z-axis drift
+    - twist_mux to allow for various cmd_vel inputs based on priority including:
+        - PS3 controller (`cmd_vel\joy`) - highest priority
+        - Interactive Markers (`cmd_vel\marker`)
+        - move_base navigation (`cmd_vel\nav`) - lowest priority
 - Launch Rviz: `roslaunch jackal_exploration view_robot.launch`
-- Launch the Jackal Exploration node: `roslaunch jackal_exploration view_robot.launch`
+- Launch the Jackal Exploration node: `roslaunch jackal_exploration jackal_exploration.launch`
 
 #### Actual Robot
 In order for this to work, you will need to be connected to Jackal over a local network. Clearpath has provided some [documentation](https://www.clearpathrobotics.com/assets/guides/jackal/network.html) to help you with this.
@@ -61,14 +65,14 @@ export ROS_HOSTNAME=yourhostname.local # your computer's hostname
 
 On Jackal:
 - Launch the Jackal Setup configs: `roslaunch jackal_exploration jackal_setup.launch`
-- Launch the Jackal Exploration node: `roslaunch jackal_exploration view_robot.launch`
+- Launch the Jackal Exploration node: `roslaunch jackal_exploration jackal_exploration.launch`
 
 
 #### Nodes
 ##### Z-Correction Node
 [`z_correction.py`](src/z_correction.py)
 
-This node corrects for any z-drift between the `odom` and `base_link` frames that tends to occur as the Jackal moves around. The corrected fram is outputted in the `odom_corrected` frame.
+This node corrects for any z-drift between the `odom` and `base_link` frames that tends to occur as the Jackal moves around. The corrected frame is outputted in the `odom_corrected` frame.
 
 Subscribed Topic: `/odometry/filtered`
 
