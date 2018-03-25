@@ -64,7 +64,6 @@ export ROS_HOSTNAME=yourhostname.local # your computer's hostname
 - Launch Rviz: `roslaunch jackal_exploration view_robot.launch`
 
 On Jackal:
-- Launch the Jackal Setup configs: `roslaunch jackal_exploration jackal_setup.launch`
 - Launch the Jackal Exploration node: `roslaunch jackal_exploration jackal_exploration.launch`
 
 
