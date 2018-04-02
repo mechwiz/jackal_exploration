@@ -133,16 +133,18 @@ class jackal_explore:
 
         if len(self.sample) > 15:
             sa = np.array(self.sample)
-            mx = np.average(sa[:,0]) - x
-            my = np.average(sa[:,1]) - y
+            mx = np.average(sa[:,0])
+            my = np.average(sa[:,1])
             mw = np.average(sa[:,2]) - w
-            if abs(mx)<0.001 and abs(my)<0.001 and abs(mw)<0.001:
+            # rospy.loginfo(calc_distance([x,y],[mx,my]))
+            if calc_distance([x,y],[mx,my]) < 0.015 and abs(mw)<0.01:
                 rospy.loginfo('Stuck. Resetting Goal...')
                 self.isstuck = True
+                xp, yp = x,y
                 if len(self.stuckpnt) > 0:
                     sx = self.stuckpnt[0]
                     sy = self.stuckpnt[1]
-                    if abs(sx-x) < 0.001 and abs(sy-y) < 0.001:
+                    if calc_distance([x,y],[sx,sy]) < 0.1:
                         if self.checkpnt < 4:
                             self.prevpnt = 0
                             rospy.loginfo("Changing Point")
@@ -154,15 +156,15 @@ class jackal_explore:
                         # else:
                         #     rospy.loginfo('Adding taboo point')
                         #     self.pntlist.append(self.nextpnt)
-                    elif self.checkpnt > 0:
+                    elif self.checkpnt > 0 and self.prevpnt != 0:
                         self.prevpnt = 1
 
                     if self.checkpnt == 4:
                         rospy.loginfo('Adding taboo point')
                         self.pntlist.append(self.nextpnt)
                         self.checkpnt = 0
+                self.stuckpnt = [xp,yp]
                 self.sendGoal([x,y])
-                self.stuckpnt = [x,y]
             self.sample = []
 
     def sendNavCb(self,data):
