@@ -3,14 +3,16 @@
 import rospy
 import cv2
 import numpy as np
+import matplotlib.path as mpltPath
 
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import PoseStamped, Quaternion, PointStamped, Point
 from nav_msgs.msg import OccupancyGrid
 from map_msgs.msg import OccupancyGridUpdate
 from move_base_msgs.msg import MoveBaseActionResult, MoveBaseActionFeedback
 # from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from tf.transformations import quaternion_from_euler
+from visualization_msgs.msg import Marker
 
 cost_update = OccupancyGridUpdate()
 result = MoveBaseActionResult()
@@ -36,13 +38,126 @@ class jackal_explore:
         self.firstgoal = 0
         self.checkpnt = 0
         self.pntlist = []
+        self.poly = []
+        self.polynum = 0
+        self.polydone = False
+        self.polypath = []
+        self.count_id = 1
+        self.send = True
+        self.again = False
 
         self.map_sub = rospy.Subscriber('/map', OccupancyGrid, self.mapCb,queue_size=1)
         self.global_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid, self.costCb,queue_size=1)
         self.globalup_sub = rospy.Subscriber('/move_base/global_costmap/costmap_updates', OccupancyGridUpdate, self.costupCb,queue_size=1)
         self.result_sub = rospy.Subscriber('move_base/result', MoveBaseActionResult, self.sendNavCb)
         self.feedback_sub = rospy.Subscriber('move_base/feedback', MoveBaseActionFeedback, self.feedbackCb)
-        self.pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=30)
+        self.poly_sub = rospy.Subscriber('/clicked_point',PointStamped,self.polyCb,queue_size=1)
+        self.pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
+        self.line_pub = rospy.Publisher('visualization_marker',Marker,queue_size = 10)
+
+    def polyCb(self,data):
+
+        x = data.point.x
+        y = data.point.y
+        rospy.loginfo([x,y])
+
+        if self.polydone == True:
+            for i in range(self.count_id - 2):
+                marker = Marker()
+                marker.header.frame_id = "/map"
+                marker.header.stamp = rospy.Time.now()
+                marker.ns = "points and lines"
+
+                marker.action = marker.DELETEALL
+                marker.id = i
+                self.line_pub.publish(marker)
+
+        marker = Marker()
+        marker.header.frame_id = "/map"
+        marker.header.stamp = rospy.Time.now()
+        marker.ns = "points and lines"
+        marker.type = marker.SPHERE
+        marker.action = marker.ADD
+        marker.pose.position.x = x
+        marker.pose.position.y = y
+        marker.id = self.count_id
+
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.scale.z = 0.1
+
+        marker.color.g = 1.0
+        marker.color.a = 1.0
+        self.line_pub.publish(marker)
+
+        if self.polydone == True:
+            self.polydone = False
+            self.poly = []
+            self.polynum = 0
+            self.polypath = []
+            self.polynum = 0
+            self.count_id = 1
+
+        self.count_id += 1
+        self.polynum += 1
+        pntnum = len(self.poly)
+
+        if pntnum > 0 and self.polynum > 3:
+            closepnt = self.poly[0]
+            if calc_distance([x,y],closepnt) < 1:
+                rospy.loginfo('Boundary done')
+                self.polypath = mpltPath.Path(np.array(self.poly))
+                marker = Marker()
+                marker.header.frame_id = "/map"
+                marker.header.stamp = rospy.Time.now()
+                marker.ns = "points and lines"
+
+                marker.action = marker.DELETE
+                marker.id = self.count_id - 1
+                self.line_pub.publish(marker)
+                self.polydone = True
+                self.send = True
+                self.again = True
+                self.sendGoal([0.5,0.5])
+
+
+        if self.polydone == False:
+            self.poly.append([x,y])
+
+        if len(self.poly) > 1:
+            newMarker = Marker()
+            newMarker.header.frame_id = "/map"
+            newMarker.header.stamp = rospy.Time.now()
+            newMarker.ns = "points_and_lines"
+            newMarker.action = newMarker.DELETE
+            newMarker.type = newMarker.LINE_STRIP
+            newMarker.action = newMarker.ADD
+            newMarker.pose.orientation.w = 1
+            newMarker.id = 0
+
+
+            newMarker.scale.x = 0.05
+            newMarker.color.b = 1.0
+            newMarker.color.a = 1.0
+
+            for p in self.poly:
+                pnt = Point()
+                pnt.x = p[0]
+                pnt.y = p[1]
+                newMarker.points.append(pnt)
+
+            if self.polydone == True:
+                pnt = Point()
+                pnt.x = self.poly[0][0]
+                pnt.y = self.poly[0][1]
+                newMarker.points.append(pnt)
+                newMarker.color.b = 0
+                newMarker.color.r = 1.0
+
+            self.line_pub.publish(newMarker)
+
+
+
 
     def costupCb(self,data):
         self.flagg = 1
@@ -131,6 +246,10 @@ class jackal_explore:
             self.sendGoal([x+0.5,y+0.5])
             self.firstgoal = 1
 
+        if self.again == True:
+            self.sendGoal([x,y])
+            self.again = False
+
         if len(self.sample) > 15:
             sa = np.array(self.sample)
             mx = np.average(sa[:,0])
@@ -169,7 +288,6 @@ class jackal_explore:
 
     def sendNavCb(self,data):
         self.sample = []
-        send = True
         result = data
         frontier_mat = []
         if result.status.text == "Goal reached.":
@@ -216,15 +334,27 @@ class jackal_explore:
                 # plt.draw()
                 # plt.pause(0.001)
 
-                frontier_pnts = findFrontier(pic_mat)
-
                 mw = interp1d([0,width],[ox,ox+width*res],bounds_error=False)
                 mh = interp1d([0,height],[oy,oy+height*res],bounds_error=False)
+
+                frontier_pnts = findFrontier(pic_mat)
+
+                if self.polydone == True and len(frontier_pnts) > 0:
+                    frontier_filter = []
+                    rospy.loginfo('filter occuring')
+                    for j in range(len(frontier_pnts)):
+                        fx = mw(frontier_pnts[j][0])
+                        fy = mh(frontier_pnts[j][1])
+                        if self.polypath.contains_point([fx,fy]) == True:
+                            frontier_filter.append(frontier_pnts[j])
+
+                    frontier_pnts = frontier_filter
 
                 if len(frontier_pnts) > 0:
                     idx = find_closest([int(c),int(r)],frontier_pnts)
                     nextpnt = frontier_pnts[idx]
                     pnt1 = [mw(nextpnt[0]),mh(nextpnt[1])]
+
                     if self.pntlist:
                         for i in range(len(self.pntlist)):
                             if calc_distance(pnt1,self.pntlist[i]) < 5:
@@ -233,10 +363,10 @@ class jackal_explore:
                                     idx = find_closest([int(c),int(r)],frontier_pnts)
                                     nextpnt = frontier_pnts[idx]
                                     pnt1 = [mw(nextpnt[0]),mh(nextpnt[1])]
-                                    rospy.loginfo('Sending number '+str(i+2) + ' in list')
+                                    rospy.loginfo('sending number '+str(i+2) + ' in list')
                                 else:
                                     rospy.loginfo('Mapping Done')
-                                    send = False
+                                    self.send = False
 
 
                     # rospy.loginfo([nextpnt,self.prevpnt])
@@ -250,18 +380,18 @@ class jackal_explore:
                     #     self.checkpnt = 0
 
                     if self.isstuck == False and self.prevpnt != -1:
-                        rospy.loginfo('repeated point')
                         if calc_distance(nextpnt,self.prevpnt) < 5:
+                            rospy.loginfo('repeated point')
                             frontier_pnts.remove(nextpnt)
                             if len(frontier_pnts) > 0:
                                 idx = find_closest([int(c),int(r)],frontier_pnts)
                                 nextpnt = frontier_pnts[idx]
                                 rospy.loginfo('Sent second closest')
                             else:
-                                send = False
+                                self.send = False
                                 rospy.loginfo('Mapping Done')
 
-                    if send == True:
+                    if self.send == True:
                         rospy.loginfo([nextpnt,self.prevpnt])
                         if self.prevpnt == 0:
                             self.checkpnt+=1
@@ -291,18 +421,6 @@ class jackal_explore:
         newPose.pose.orientation.z = q[2]
         newPose.pose.orientation.w = q[3]
         self.pub.publish(newPose)
-
-def calc_distance(pnt1,pnt2):
-    x1,y1 = pnt1
-    x2,y2 = pnt2
-    dist = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    return dist
-
-def find_closest(node,nodes):
-    nodes = np.asarray(nodes)
-    node = np.asarray(node)
-    dist_2 = np.sum((nodes - node)**2, axis=1)
-    return np.argmin(dist_2)
 
 def findFrontier(mat):
     frontier_pnts = []
@@ -359,11 +477,31 @@ def findFrontier(mat):
                 frontier_pnts.append(center)
                 res = cv2.circle(res,(int(center[0]),int(center[1])),int(radius),75,2)
 
+        # if self.polydone == True and len(frontier_pnts) > 0:
+        #     frontier_filter = []
+        #     rospy.loginfo('filter occuring')
+        #     for j in range(len(frontier_pnts)):
+        #         if self.polypath.contains_point(frontier_pnts[j]) == True:
+        #             frontier_filter.append(frontier_pnts[j])
+
+        #     frontier_pnts = frontier_filter
         # plt.imshow(res,cmap='gray',origin='lower')
         # plt.draw()
         # plt.pause(0.001)
 
     return frontier_pnts
+
+def calc_distance(pnt1,pnt2):
+    x1,y1 = pnt1
+    x2,y2 = pnt2
+    dist = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    return dist
+
+def find_closest(node,nodes):
+    nodes = np.asarray(nodes)
+    node = np.asarray(node)
+    dist_2 = np.sum((nodes - node)**2, axis=1)
+    return np.argmin(dist_2)
 
 if __name__ == "__main__":
     rospy.init_node('explore') #make node
@@ -371,7 +509,7 @@ if __name__ == "__main__":
     gc = jackal_explore()
     rospy.sleep(1)
     gc.sendGoal([0.5,0.5])
-    # rospy.sleep(1)
+    rospy.sleep(0.5)
     # plt.figure()
     # plt.show()
     try:
