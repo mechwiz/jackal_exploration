@@ -57,30 +57,41 @@ class jackal_explore:
 
     def polyCb(self,data):
 
+        if self.polydone == True:
+            for i in range(self.count_id-1):
+                marker = Marker()
+                marker.header.frame_id = "/map"
+                marker.header.stamp = rospy.Time.now()
+                marker.ns = "points_and_lines"
+                marker.id = i
+                if i == 0:
+                    marker.type = marker.LINE_STRIP
+                else:
+                    marker.type = marker.SPHERE
+                marker.action = marker.DELETE
+                self.line_pub.publish(marker)
+
+            self.polydone = False
+            self.poly = []
+            self.polynum = 0
+            self.polypath = []
+            self.polynum = 0
+            self.count_id = 1
+
+
         x = data.point.x
         y = data.point.y
         rospy.loginfo([x,y])
 
-        if self.polydone == True:
-            for i in range(self.count_id - 2):
-                marker = Marker()
-                marker.header.frame_id = "/map"
-                marker.header.stamp = rospy.Time.now()
-                marker.ns = "points and lines"
-
-                marker.action = marker.DELETEALL
-                marker.id = i
-                self.line_pub.publish(marker)
-
         marker = Marker()
         marker.header.frame_id = "/map"
         marker.header.stamp = rospy.Time.now()
-        marker.ns = "points and lines"
+        marker.ns = "points_and_lines"
+        marker.id = self.count_id
         marker.type = marker.SPHERE
         marker.action = marker.ADD
         marker.pose.position.x = x
         marker.pose.position.y = y
-        marker.id = self.count_id
 
         marker.scale.x = 0.1
         marker.scale.y = 0.1
@@ -90,19 +101,11 @@ class jackal_explore:
         marker.color.a = 1.0
         self.line_pub.publish(marker)
 
-        if self.polydone == True:
-            self.polydone = False
-            self.poly = []
-            self.polynum = 0
-            self.polypath = []
-            self.polynum = 0
-            self.count_id = 1
-
         self.count_id += 1
         self.polynum += 1
-        pntnum = len(self.poly)
 
-        if pntnum > 0 and self.polynum > 3:
+
+        if self.polynum > 3:
             closepnt = self.poly[0]
             if calc_distance([x,y],closepnt) < 1:
                 rospy.loginfo('Boundary done')
@@ -110,10 +113,11 @@ class jackal_explore:
                 marker = Marker()
                 marker.header.frame_id = "/map"
                 marker.header.stamp = rospy.Time.now()
-                marker.ns = "points and lines"
-
-                marker.action = marker.DELETE
+                marker.ns = "points_and_lines"
                 marker.id = self.count_id - 1
+                marker.type = marker.SPHERE
+                marker.action = marker.DELETE
+
                 self.line_pub.publish(marker)
                 self.polydone = True
                 self.send = True
@@ -129,11 +133,11 @@ class jackal_explore:
             newMarker.header.frame_id = "/map"
             newMarker.header.stamp = rospy.Time.now()
             newMarker.ns = "points_and_lines"
-            newMarker.action = newMarker.DELETE
+            newMarker.id = 0
             newMarker.type = newMarker.LINE_STRIP
             newMarker.action = newMarker.ADD
             newMarker.pose.orientation.w = 1
-            newMarker.id = 0
+
 
 
             newMarker.scale.x = 0.05
@@ -155,9 +159,6 @@ class jackal_explore:
                 newMarker.color.r = 1.0
 
             self.line_pub.publish(newMarker)
-
-
-
 
     def costupCb(self,data):
         self.flagg = 1
