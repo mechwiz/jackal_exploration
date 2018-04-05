@@ -96,7 +96,6 @@ Published Topic: `/move_base_simple/goal`
 ## Demo & Future Improvements
 #### Video
 A video of Jackal exploring a simulated environment in Gazebo can be found [here](https://www.youtube.com/watch?v=x4oIJKmgQMc).
-
+A video of Jackal exploring an actual hallway in Northwestern can be found [here](https://www.youtube.com/watch?v=8slMv4ZIi4U).
 #### Further Improvements
-- Further tuning still needs to be done to have Jackal create less noisy maps in a real environment.
-- Making the exploration algorithm to be more robost to take into account more edge cases. See my portfolio post for examples.
+- Making the exploration algorithm more efficient and robust.
