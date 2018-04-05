@@ -95,7 +95,7 @@ Published Topic: `/move_base_simple/goal`
 
 ## Demo & Future Improvements
 #### Video
-A video of Jackal exploring a simulated environment in Gazebo can be found [here](https://www.youtube.com/watch?v=x4oIJKmgQMc).
-A video of Jackal exploring an actual hallway in Northwestern can be found [here](https://www.youtube.com/watch?v=8slMv4ZIi4U).
+- A video of Jackal exploring a simulated environment in Gazebo can be found [here](https://www.youtube.com/watch?v=x4oIJKmgQMc).
+- A video of Jackal exploring an actual hallway in Northwestern can be found [here](https://www.youtube.com/watch?v=8slMv4ZIi4U).
 #### Further Improvements
 - Making the exploration algorithm more efficient and robust.
