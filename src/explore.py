@@ -44,7 +44,7 @@ class jackal_explore:
         self.polypath = []
         self.count_id = 1
         self.send = True
-        self.again = False
+        self.currentpos =[]
 
         self.map_sub = rospy.Subscriber('/map', OccupancyGrid, self.mapCb,queue_size=1)
         self.global_sub = rospy.Subscriber('/move_base/global_costmap/costmap', OccupancyGrid, self.costCb,queue_size=1)
@@ -121,8 +121,7 @@ class jackal_explore:
                 self.line_pub.publish(marker)
                 self.polydone = True
                 self.send = True
-                self.again = True
-                self.sendGoal([0.5,0.5])
+                self.sendGoal(self.currentpos)
 
 
         if self.polydone == False:
@@ -242,14 +241,11 @@ class jackal_explore:
         y = self.feedback.feedback.base_position.pose.position.y
         w = self.feedback.feedback.base_position.pose.orientation.w
         self.sample.append([x,y,w])
+        self.currentpos = [x,y]
 
         if self.firstgoal == 0:
             self.sendGoal([x+0.5,y+0.5])
             self.firstgoal = 1
-
-        if self.again == True:
-            self.sendGoal([x,y])
-            self.again = False
 
         if len(self.sample) > 15:
             sa = np.array(self.sample)

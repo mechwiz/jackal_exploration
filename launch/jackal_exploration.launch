@@ -1,5 +1,5 @@
 <launch>
 
-    <node pkg="jackal_exploration" type="gridcalc.py" name="gridcalc" output="screen" />
+    <node pkg="jackal_exploration" type="explore.py" name="explore" output="screen" />
 
 </launch>
