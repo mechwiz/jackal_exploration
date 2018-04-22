@@ -79,7 +79,7 @@ Published Topic: `/odometry/corrected`
 
 
 ##### Exploration Node
-[`gridcalc.py`](src/gridcalc.py)
+[`exlore.py`](src/explore.py)
 
 This node is the brain that computes what the next goal position should be that Jackal should go to. See my portfolio post that goes into detail about this [here](https://mechwiz.github.io/Portfolio/).
 

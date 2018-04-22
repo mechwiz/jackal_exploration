@@ -253,15 +253,17 @@ class jackal_explore:
             my = np.average(sa[:,1])
             mw = np.average(sa[:,2]) - w
             # rospy.loginfo(calc_distance([x,y],[mx,my]))
+
             if calc_distance([x,y],[mx,my]) < 0.015 and abs(mw)<0.01:
                 rospy.loginfo('Stuck. Resetting Goal...')
                 self.isstuck = True
                 xp, yp = x,y
+
                 if len(self.stuckpnt) > 0:
                     sx = self.stuckpnt[0]
                     sy = self.stuckpnt[1]
                     if calc_distance([x,y],[sx,sy]) < 0.1:
-                        if self.checkpnt < 4:
+                        if self.checkpnt < 4 and self.prevpnt != 0:
                             self.prevpnt = 0
                             rospy.loginfo("Changing Point")
                             x = x + 0.5*offsetx[self.offsetcnt]
