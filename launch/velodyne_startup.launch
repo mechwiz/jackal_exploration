@@ -1,0 +1,6 @@
+<launch>
+
+  <!--- Run Velodyne Driver -->
+  <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch" />
+
+</launch>
