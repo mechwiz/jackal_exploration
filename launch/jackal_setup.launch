@@ -12,6 +12,6 @@
   <!--- Run Twist Mux -->
   <include file="$(find jackal_exploration)/launch/twist_mux.launch" />
 
-  <node pkg="jackal_exploration" type="z_correction.py" name="z_correction" output="screen" />
+  <!-- <node pkg="jackal_exploration" type="z_correction.py" name="z_correction" output="screen" /> -->
 
 </launch>
