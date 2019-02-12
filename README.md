@@ -41,7 +41,6 @@ Note, wait until each of the following launch files have finished starting befor
     - gmapping to start SLAM
     - pointcloud filtering (cropbox and voxel-grid downsampling)
     - pointcloud to laserscan conversion to make gmapping happy
-    - z-correction to correct for z-axis drift
     - twist_mux to allow for various cmd_vel inputs based on priority including:
         - PS3 controller (`cmd_vel\joy`) - highest priority
         - Interactive Markers (`cmd_vel\marker`)
@@ -52,7 +51,27 @@ Note, wait until each of the following launch files have finished starting befor
 #### Actual Robot
 In order for this to work, you will need to be connected to Jackal over a local network. Clearpath has provided some [documentation](https://www.clearpathrobotics.com/assets/guides/jackal/network.html) to help you with this.
 
-SSH into Jackal and run:
+##### Initial Setup
+SSH into Jackal:
+- Navigate to the `/etc/ros/indigo/ros.d` directory.
+- Modify the `base.launch` startup file so that the following lines:
+```
+<include file="$(find jackal_description)/launch/description.launch" />
+<include file="$(find jackal_control)/launch/control.launch" />
+<include file="$(find jackal_control)/launch/teleop.launch">
+```
+are changed to
+```
+<include file="$(find jackal_exploration)/launch/description.launch" />
+<include file="$(find jackal_exploration)/launch/control.launch" />
+<include file="$(find jackal_exploration)/launch/teleop.launch">
+```
+Note that the [jackal.urdf.xacro](urdf/jackal.urdf.xacro) file (which is loaded in the [description.launch](launch/description.launch) file) has been modified to include the Velodyne Lidar and mounting plate as they are setup on the Northwestern Jackal robot.
+- Add the [velodyne_startup.launch](launch/velodyne_startup.launch) file to the directory
+- Navigate to the `/etc/ros/setup.bash` file and change the line `source /opt/ros/indigo/setup.bash` to `source /home/administrator/jackal_ws/devel/setup.bash`
+- Reboot Jackal
+
+##### Running the launch files
 - Launch the Jackal Setup configs: `roslaunch jackal_exploration jackal_setup.launch`
 
 On your computer:
@@ -68,16 +87,6 @@ On Jackal:
 
 
 #### Nodes
-##### Z-Correction Node
-[`z_correction.py`](src/z_correction.py)
-
-This node corrects for any z-drift between the `odom` and `base_link` frames that tends to occur as the Jackal moves around. The corrected frame is outputted in the `odom_corrected` frame.
-
-Subscribed Topic: `/odometry/filtered`
-
-Published Topic: `/odometry/corrected`
-
-
 ##### Exploration Node
 [`exlore.py`](src/explore.py)
 
@@ -92,6 +101,12 @@ Subscribed Topics:
 
 Published Topic: `/move_base_simple/goal`
 
+#### Robot Localization
+In the development process, several uncharacteristic behaviors were noticed:
+- z-drift between the `odom` and `base_link` frames
+- Pitch and Roll drift
+
+The culprit seemed to be due to the default [robot_localization.yaml](https://github.com/jackal/jackal/blob/kinetic-devel/jackal_control/config/robot_localization.yaml) file which sets the parameters for sensor fusion of the odometry and IMU data. Roll, pitch, and yaw data were being considered from the IMU but were not set to be _relative_ (i.e. calibrated so that the first data point is the new zero). This explained the uncharacteristic pitch and roll behavior. Due to the fact that this project is only meant for a flat surface anyway, the roll and pitch parameters were changed such that the robot-ekf does not even consider them. Similarly, the parameter file by default considers velocity along the z-axis from the robot odometry which probably led to the z-drift problem, especially since the _relative_ parameter was initially set to false. As this project is only meant for a flat surface, the z-axis velocity is not considered. These changes can be seen in the updated [robot_localization.yaml](params/robot_localization.yaml). This fixed the uncharacterisitc behavior that was seen.
 
 ## Demo & Future Improvements
 #### Video
