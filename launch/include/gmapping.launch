@@ -4,7 +4,7 @@
 
   <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
 
-    <param name="odom_frame" value="odom_corrected"/>
+    <param name="odom_frame" value="odom"/>
     <param name="base_frame" value="base_link"/>
     <param name="map_frame" value="map"/>
 
