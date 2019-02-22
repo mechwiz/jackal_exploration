@@ -37,13 +37,15 @@ All of the required dependencies should be included (Gazebo, Rviz, relevant Jack
 Note, wait until each of the following launch files have finished starting before running the next one.
 #### Simulation
 - Launch the Gazebo world: `roslaunch jackal_exploration jackal_world.launch`
+- Launch the Keyboard Teleop node if desired: `roslaunch jackal_exploration keyboard_teleop.launch`
 - Launch the Jackal Setup configs: `roslaunch jackal_exploration jackal_setup.launch`. These include running:
     - gmapping to start SLAM
     - pointcloud filtering (cropbox and voxel-grid downsampling)
     - pointcloud to laserscan conversion to make gmapping happy
     - twist_mux to allow for various cmd_vel inputs based on priority including:
         - PS3 controller (`cmd_vel\joy`) - highest priority
-        - Interactive Markers (`cmd_vel\marker`)
+        - Keyboard (`cmd_vel\keyboard`) - second priority
+        - Interactive Markers (`cmd_vel\marker`) - third priority
         - move_base navigation (`cmd_vel\nav`) - lowest priority
 - Launch Rviz: `roslaunch jackal_exploration view_robot.launch`
 - Launch the Jackal Exploration node: `roslaunch jackal_exploration jackal_exploration.launch`
@@ -81,6 +83,7 @@ export ROS_MASTER_URI=http://CPR-J100-0076.local:11311  # Jackal's hostname and 
 export ROS_HOSTNAME=yourhostname.local # your computer's hostname
 ```
 - Launch Rviz: `roslaunch jackal_exploration view_robot.launch`
+- Launch the Keyboard Teleop node if desired: `roslaunch jackal_exploration keyboard_teleop.launch`
 
 On Jackal:
 - Launch the Jackal Exploration node: `roslaunch jackal_exploration jackal_exploration.launch`
